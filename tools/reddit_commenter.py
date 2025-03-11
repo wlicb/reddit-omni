@@ -2,7 +2,7 @@ from dotenv import dotenv_values
 import praw
 
 
-def reddit_commenter(input_list):
+def reddit_commenter(id, comment):
     """
     Comments given text on a given subreddit post.
 
@@ -17,7 +17,7 @@ def reddit_commenter(input_list):
     (str): The formatted comment or an error message if something goes wrong.
     """
     CONFIG = dotenv_values("config/.env")
-    id_comment = input_list[0]
+    id = input_list[0]
     comment = input_list[1]
 
     # Initialize Reddit instance
@@ -31,7 +31,7 @@ def reddit_commenter(input_list):
 
     try:
         # Get the subreddit
-        post = reddit.submission(id=id_comment)
+        post = reddit.submission(id=id)
         replied = post.reply(comment)
         return replied
 

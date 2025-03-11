@@ -2,7 +2,7 @@ from dotenv import dotenv_values
 import praw
 
 
-def reddit_scrapper(input_list):
+def reddit_scrapper(subreddit_name, num_posts):
     """
     Scrapes given subreddit's today's top posts for a number of posts.
 
@@ -17,8 +17,6 @@ def reddit_scrapper(input_list):
     (str): The formatted weather or an error message if something goes wrong.
     """
     CONFIG = dotenv_values("config/.env")
-    subreddit_name = input_list[0]
-    num_posts = int(input_list[1])
 
     # Initialize Reddit instance
     reddit = praw.Reddit(
@@ -41,8 +39,8 @@ def reddit_scrapper(input_list):
                 post_ids.append(post.id)
             else:
                 result.append("Pinned post.")
-        print(result)
-        print(post_ids)
+        # print(result)
+        # print(post_ids)
         return "\n\n".join(result), post_ids
 
     except Exception as e:
