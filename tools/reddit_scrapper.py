@@ -34,14 +34,14 @@ def reddit_scrapper(subreddit_name, num_posts):
         post_ids = []
         for post in top_posts:
             if not post.stickied:
-                result.append(
-                    f"Title: {post.title}\nBody: {post.selftext if post.selftext else 'Empty.'}")
+                result.append({
+                    "title": {post.title}, "body": {post.selftext if post.selftext else 'Empty.'}})
                 post_ids.append(post.id)
             else:
                 result.append("Pinned post.")
-        # print(result)
-        # print(post_ids)
-        return "\n\n".join(result), post_ids
+        print(result)
+        print(post_ids)
+        return result, post_ids
 
     except Exception as e:
         return f"An unexpected error occurred: {e}"

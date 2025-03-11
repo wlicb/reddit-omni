@@ -17,8 +17,6 @@ def reddit_commenter(id, comment):
     (str): The formatted comment or an error message if something goes wrong.
     """
     CONFIG = dotenv_values("config/.env")
-    id = input_list[0]
-    comment = input_list[1]
 
     # Initialize Reddit instance
     reddit = praw.Reddit(
