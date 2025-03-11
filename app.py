@@ -5,9 +5,14 @@ from tools.scrape_tool import scrape_tool
 from tools.reddit_commenter import reddit_commenter
 import json
 import time
+import os
 
-subreddit_name = 'askbaking'
+subreddit_name = 'Python'
 search_term = ''
+
+log_file="answered_questions.json"
+
+questions_to_answer = 5
 
 def prepare_system_prompts():
     with open("prompts/writer.md", "r") as file:
@@ -16,15 +21,34 @@ def prepare_system_prompts():
 
 
 def chain_of_action(model, system_prompt_writer):
+    answered_count = 0
     # Scrape reddit posts for questions
     # reddit_scrape = "where will the next olympics be held?"
-    questions, post_ids = reddit_scrapper(subreddit_name, 2)
+    questions = reddit_scrapper(subreddit_name)
 
-    for i in range(len(questions)):
-        question = questions[i]
-        post_id = post_ids[i]
-        print(f"Question:\n{question}")
-        print(f"Question URL: https://www.reddit.com/r/{subreddit_name}/comments/{post_id}/")
+
+    for post_id, question in questions.items():
+        question_url = f"https://www.reddit.com/r/{subreddit_name}/comments/{post_id}/"
+        print(f"Question URL: {question_url}")
+
+        # Load existing log file if available
+        if os.path.exists(log_file):
+            with open(log_file, "r", encoding="utf-8") as f:
+                try:
+                    answered_questions = json.load(f)
+                except json.JSONDecodeError:
+                    answered_questions = {}
+        else:
+            answered_questions = {}
+
+
+        if post_id in answered_questions:
+            print(f"Question answered.")
+            continue
+
+        if "title" not in question:
+            print("Malformed question.")
+            continue
 
 
         # Use the writer
@@ -40,13 +64,24 @@ def chain_of_action(model, system_prompt_writer):
         print("Answer:", writer)
 
         # Use the reddit_poster tool
-        print(reddit_commenter(post_id, writer))
+        reddit_commenter(post_id, writer)
 
-        
+        # Log the answered question
+        answered_questions[post_id] = {
+            "title": question["title"],
+            "body": question["body"],
+            "url": question_url,
+            "answer": writer
+        }
+        with open(log_file, "w", encoding="utf-8") as f:
+            json.dump(answered_questions, f, indent=2, ensure_ascii=False)
+
+        answered_count += 1
+
+        if answered_count >= questions_to_answer:
+            break
 
         time.sleep(10)
-
-
 
 if __name__ == "__main__":
 

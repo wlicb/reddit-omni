@@ -2,7 +2,7 @@ from dotenv import dotenv_values
 import praw
 
 
-def reddit_scrapper(subreddit_name, num_posts):
+def reddit_scrapper(subreddit_name, num_posts=100):
     """
     Scrapes given subreddit's today's top posts for a number of posts.
 
@@ -30,18 +30,12 @@ def reddit_scrapper(subreddit_name, num_posts):
         subreddit = reddit.subreddit(subreddit_name)
         top_posts = subreddit.top(limit=num_posts, time_filter="day")
 
-        result = []
-        post_ids = []
+        result = {}
         for post in top_posts:
             if not post.stickied:
-                result.append({
-                    "title": {post.title}, "body": {post.selftext if post.selftext else 'Empty.'}})
-                post_ids.append(post.id)
-            else:
-                result.append("Pinned post.")
-        print(result)
-        print(post_ids)
-        return result, post_ids
+                result[post.id] = {
+                    "title": post.title, "body": post.selftext if post.selftext else 'Empty.'}
+        return result
 
     except Exception as e:
         return f"An unexpected error occurred: {e}"

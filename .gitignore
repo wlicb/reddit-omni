@@ -1,3 +1,6 @@
 *.env
 *.pyc
 /config/*.env
+config/.env
+answered_questions.json
+config/.env
