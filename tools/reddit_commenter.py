@@ -1,6 +1,9 @@
 import praw
 import json
+import os
 from dotenv import dotenv_values
+
+json_file = "reddit_comments.json"
 
 def reddit_commenter(comment, post_id, reply_id=None):
     """
@@ -38,10 +41,10 @@ def reddit_commenter(comment, post_id, reply_id=None):
         replied = parent.reply(comment)
         reply_id = replied.id
 
-        try:
-            with open("reddit_comments.json", "r", encoding="utf-8") as file:
+        if os.path.exists(json_file):
+            with open(json_file, "r", encoding="utf-8") as file:
                 data = json.load(file)
-        except FileNotFoundError:
+        else:
             data = {}
 
         # Function to insert the reply into the correct place in the tree
@@ -80,7 +83,7 @@ def reddit_commenter(comment, post_id, reply_id=None):
                     "comments": {reply_id: new_comment_data}
                 }
 
-        with open("reddit_comments.json", "w", encoding="utf-8") as file:
+        with open(json_file, "w", encoding="utf-8") as file:
             json.dump(data, file, indent=4)
 
         print(f"Successfully commented: {replied.permalink} and updated JSON")
