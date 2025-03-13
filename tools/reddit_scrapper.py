@@ -55,6 +55,7 @@ def reddit_scrapper(subreddit_name, num_posts=None):
                     "body": post.selftext if post.selftext else 'Empty.',
                     "author": post.author.id if post.author else "[deleted]",
                     "bot": (post.author.id == bot_id),
+                    "url": f"https://www.reddit.com/r/{subreddit_name}/comments/{post.id}/",
                     "comments": {comment.id: get_comment_tree(comment, bot_id) for comment in post.comments}
                 }
         

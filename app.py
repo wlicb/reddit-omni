@@ -43,10 +43,19 @@ def chain_of_action(model, system_prompt_writer):
 
         writer = model.answer(
             system_prompt=system_prompt_writer, prompt=writer_prompt, json=False)
-        print("Answer:", writer)
 
-        # Use the reddit_poster tool
-        # reddit_commenter(writer, post_id)
+        parsed_response = json.loads(writer)
+
+        reply_id = parsed_response.get("reply_id")
+        comment_text = parsed_response.get("comment")
+        print("reply id:", reply_id)
+        print("comment:", comment_text)
+
+        # # Use the reddit_poster tool
+        # if reply_id == "":
+            # reddit_commenter(comment_text, post_id)
+        # else:
+            # reddit_commenter(comment_text, post_id, reply_id)
 
         answered_count += 1
 
