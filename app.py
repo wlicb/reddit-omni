@@ -7,12 +7,12 @@ import json
 import time
 import os
 
-subreddit_name = 'Python'
+subreddit_name = 'askbaking'
 search_term = ''
 
 log_file="answered_questions.json"
 
-questions_to_answer = 5
+questions_to_answer = 1
 
 def prepare_system_prompts():
     with open("prompts/writer.md", "r") as file:
@@ -31,20 +31,6 @@ def chain_of_action(model, system_prompt_writer):
         question_url = f"https://www.reddit.com/r/{subreddit_name}/comments/{post_id}/"
         print(f"Question URL: {question_url}")
 
-        # Load existing log file if available
-        if os.path.exists(log_file):
-            with open(log_file, "r", encoding="utf-8") as f:
-                try:
-                    answered_questions = json.load(f)
-                except json.JSONDecodeError:
-                    answered_questions = {}
-        else:
-            answered_questions = {}
-
-
-        if post_id in answered_questions:
-            print(f"Question answered.")
-            continue
 
         if "title" not in question:
             print("Malformed question.")
@@ -64,17 +50,7 @@ def chain_of_action(model, system_prompt_writer):
         print("Answer:", writer)
 
         # Use the reddit_poster tool
-        reddit_commenter(post_id, writer)
-
-        # Log the answered question
-        answered_questions[post_id] = {
-            "title": question["title"],
-            "body": question["body"],
-            "url": question_url,
-            "answer": writer
-        }
-        with open(log_file, "w", encoding="utf-8") as f:
-            json.dump(answered_questions, f, indent=2, ensure_ascii=False)
+        reddit_commenter(writer, post_id)
 
         answered_count += 1
 
