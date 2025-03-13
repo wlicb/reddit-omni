@@ -38,19 +38,15 @@ def chain_of_action(model, system_prompt_writer):
 
 
         # Use the writer
-        writer_prompt = f"""
-        {{
-            "question_title": "{question["title"]}",
-            "question_body": "{question["body"]}"
-        }}
-        """
+        writer_prompt = json.dumps(question)
+        print(writer_prompt)
 
         writer = model.answer(
             system_prompt=system_prompt_writer, prompt=writer_prompt, json=False)
         print("Answer:", writer)
 
         # Use the reddit_poster tool
-        reddit_commenter(writer, post_id)
+        # reddit_commenter(writer, post_id)
 
         answered_count += 1
 
