@@ -87,8 +87,7 @@ def select_reply_target(reddit_data, selected_thread_id, system_prompt):
 
 def reply_to_comment(reddit_data, selected_thread_id, selected_comment_id, system_prompt):
     selected_thread = reddit_data[selected_thread_id]
-    print(selected_thread)
-    selected_comment = selected_thread[selected_comment_id]
+    selected_comment = selected_thread["comments"][selected_comment_id]
     
     
     prompt = json.dumps({
