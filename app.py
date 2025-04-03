@@ -7,7 +7,7 @@ import json
 import time
 import os
 
-subreddit_name = 'askbaking'
+subreddit_name = 'science'
 search_term = ''
 
 log_file="answered_questions.json"
@@ -15,59 +15,153 @@ log_file="answered_questions.json"
 questions_to_answer = 1
 
 def prepare_system_prompts():
-    with open("prompts/writer.md", "r") as file:
-        system_prompt_writer = file.read()
-    return system_prompt_writer
+    with open("prompts/select_thread.md", "r") as f:
+        system_prompt_select_thread = f.read()
+    with open("prompts/select_reply_target.md", "r") as f:
+        system_prompt_select_reply_target = f.read()
+    with open("prompts/generate_reply_to_comment.md", "r") as f:
+        system_prompt_generate_reply_to_comment = f.read()
+    with open("prompts/generate_reply_to_thread.md", "r") as f:
+        system_prompt_generate_reply_to_thread = f.read()
+
+    return {
+        "select_thread": system_prompt_select_thread,
+        "select_reply_target": system_prompt_select_reply_target,
+        "generate_reply_to_comment": system_prompt_generate_reply_to_comment,
+        "generate_reply_to_thread": system_prompt_generate_reply_to_thread
+    }
+
+def select_thread(reddit_data, system_prompt):
+    prompt = json.dumps({
+        "threads": [
+            {
+                "id": tid,
+                "title": thread["title"],
+                "body": thread["body"]
+            }
+            for tid, thread in reddit_data.items()
+        ],
+    }, indent=4)
+    print(prompt)
+
+    response = model.answer(
+        system_prompt=system_prompt, prompt=prompt, json=True)
+    print(response)
+
+    parsed_response = json.loads(response)
+
+    return parsed_response["selected_thread_id"]
 
 
-def chain_of_action(model, system_prompt_writer):
-    answered_count = 0
+def select_reply_target(reddit_data, selected_thread_id, system_prompt):
+    selected_thread = reddit_data[selected_thread_id]
+    
+    prompt = json.dumps({
+        "post": {
+            "title": selected_thread["title"],
+            "body": selected_thread["body"],
+            "id": selected_thread_id
+        },
+        "comments": [
+            {
+                "id": cid,
+                "body": c["body"],
+                "bot": c["bot"]
+            }
+            for cid, c in selected_thread["comments"].items()
+        ],
+    }, indent=4)
+
+    print(prompt)
+
+    response = model.answer(
+        system_prompt=system_prompt, prompt=prompt, json=True)
+    
+    print(response)
+
+    parsed_response = json.loads(response)
+
+    return parsed_response["reply_target_type"], parsed_response["reply_target_id"]
+
+
+
+def reply_to_comment(reddit_data, selected_thread_id, selected_comment_id, system_prompt):
+    selected_thread = reddit_data[selected_thread_id]
+    print(selected_thread)
+    selected_comment = selected_thread[selected_comment_id]
+    
+    
+    prompt = json.dumps({
+        "post": {
+            "title": selected_thread["title"],
+            "body": selected_thread["body"],
+        },
+        "comment": [
+            selected_comment
+        ],
+    }, indent=4)
+
+    print(prompt)
+
+    response = model.answer(
+        system_prompt=system_prompt, prompt=prompt, json=True)
+    
+    print(response)
+
+    parsed_response = json.loads(response)
+
+    return parsed_response["reply_id"], parsed_response["comment"]
+
+
+
+def reply_to_thread(reddit_data, selected_thread_id, system_prompt):
+    selected_thread = reddit_data[selected_thread_id]
+    
+    prompt = json.dumps({
+        "post": {
+            "title": selected_thread["title"],
+            "body": selected_thread["body"],
+        },
+    }, indent=4)
+
+    print(prompt)
+
+    response = model.answer(
+        system_prompt=system_prompt, prompt=prompt, json=False)
+    
+    print(response)
+
+    return response
+
+
+def chain_of_action(model, system_prompts):
     # Scrape reddit posts for questions
     # reddit_scrape = "where will the next olympics be held?"
-    questions = reddit_scrapper(subreddit_name)
+    reddit_data = reddit_scrapper(subreddit_name, 10)
+
+    # print(reddit_data)
+
+    thread_id = select_thread(reddit_data, system_prompts["select_thread"])
+    target_type, target_id = select_reply_target(reddit_data, thread_id, system_prompts["select_reply_target"])
+    if target_type == "Comment":
+        reply_id, comment_text = reply_to_comment(reddit_data, thread_id, target_id, system_prompts["generate_reply_to_comment"])
+    else:
+        comment_text = reply_to_thread(reddit_data, thread_id, system_prompts["generate_reply_to_comment"])
+
+    print(comment_text, thread_id)
 
 
-    for post_id, question in questions.items():
-        question_url = f"https://www.reddit.com/r/{subreddit_name}/comments/{post_id}/"
-        print(f"Question URL: {question_url}")
+    # # Use the reddit_poster tool
+    # if reply_id == "":
+        # reddit_commenter(comment_text, post_id)
+    # else:
+        # reddit_commenter(comment_text, post_id, reply_id)
 
-
-        if "title" not in question:
-            print("Malformed question.")
-            continue
-
-
-        # Use the writer
-        writer_prompt = json.dumps(question)
-        print(writer_prompt)
-
-        writer = model.answer(
-            system_prompt=system_prompt_writer, prompt=writer_prompt, json=False)
-
-        parsed_response = json.loads(writer)
-
-        reply_id = parsed_response.get("reply_id")
-        comment_text = parsed_response.get("comment")
-        print("reply id:", reply_id)
-        print("comment:", comment_text)
-
-        # # Use the reddit_poster tool
-        # if reply_id == "":
-            # reddit_commenter(comment_text, post_id)
-        # else:
-            # reddit_commenter(comment_text, post_id, reply_id)
-
-        answered_count += 1
-
-        if answered_count >= questions_to_answer:
-            break
-
-        time.sleep(10)
 
 if __name__ == "__main__":
 
     model = ChatGPT3()
 
-    system_prompt_writer = prepare_system_prompts()
+    system_prompts = prepare_system_prompts()
 
-    chain_of_action(model, system_prompt_writer=system_prompt_writer)
+    chain_of_action(model, system_prompts)

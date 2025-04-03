@@ -8,9 +8,9 @@ json_file = "reddit_comments.json"
 
 def get_comment_tree(comment, bot_id):
     comment_data = {
-        "author": comment.author.id if comment.author else "[deleted]",
+        "author": comment.author.name if comment.author else "[deleted]",
         "body": comment.body,
-        "bot": (comment.author.id == bot_id),
+        "bot": (comment.author.name == bot_id if comment.author else False),
         "replies": {reply.id: get_comment_tree(reply, bot_id) for reply in comment.replies}
     }
     return comment_data
@@ -57,7 +57,8 @@ def reddit_scrapper(subreddit_name, num_posts=None):
 
 
     try:
-        bot_id = reddit.user.me().id
+        bot_id = reddit.user.me().name
+
 
         # Load existing data (if the file exists)
         if os.path.exists(json_file):
@@ -70,11 +71,14 @@ def reddit_scrapper(subreddit_name, num_posts=None):
         subreddit = reddit.subreddit(subreddit_name)
         top_posts = subreddit.top(limit=num_posts, time_filter="day")
 
+
         for post in top_posts:
-            if not post.stickied:
+            if not post.stickied and post.id:
                 post.comments.replace_more(limit=0)
 
                 new_comments = {comment.id: get_comment_tree(comment, bot_id) for comment in post.comments}
+                
+
 
                 if post.id in data:
                     # Update existing post: Merge new comments into the existing structure
@@ -84,8 +88,8 @@ def reddit_scrapper(subreddit_name, num_posts=None):
                     data[post.id] = {
                         "title": post.title,
                         "body": post.selftext if post.selftext else 'Empty.',
-                        "author": post.author.id if post.author else "[deleted]",
-                        "bot": (post.author.id == bot_id),
+                        "author": post.author.name if post.author else "[deleted]",
+                        "bot": (post.author.name == bot_id if post.author else False),
                         "url": f"https://www.reddit.com/r/{subreddit_name}/comments/{post.id}/",
                         "comments": new_comments
                     }
