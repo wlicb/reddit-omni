@@ -2,8 +2,10 @@ from dotenv import dotenv_values
 import praw
 import json
 import os
+from pymongo import MongoClient, UpdateOne
 
-json_file = "reddit_comments.json"
+
+mongo_uri = "mongodb://localhost:27017/"
 
 
 def get_comment_tree(comment, bot_id):
@@ -54,18 +56,17 @@ def reddit_scrapper(subreddit_name, num_posts=None):
         password=CONFIG["PASSWORD"]
     )
 
+    client = MongoClient(mongo_uri)
+    db = client["reddit_db"]
+    collection = db[subreddit_name]
+
 
 
     try:
         bot_id = reddit.user.me().name
 
 
-        # Load existing data (if the file exists)
-        if os.path.exists(json_file):
-            with open(json_file, "r", encoding="utf-8") as file:
-                data = json.load(file)
-        else:
-            data = {}
+        
 
         # Get the subreddit
         subreddit = reddit.subreddit(subreddit_name)
@@ -80,25 +81,23 @@ def reddit_scrapper(subreddit_name, num_posts=None):
                 
 
 
-                if post.id in data:
-                    # Update existing post: Merge new comments into the existing structure
-                    update_comments(data[post.id]["comments"], new_comments)
-                else:
-                    # Add new post
-                    data[post.id] = {
-                        "title": post.title,
-                        "body": post.selftext if post.selftext else 'Empty.',
-                        "author": post.author.name if post.author else "[deleted]",
-                        "bot": (post.author.name == bot_id if post.author else False),
-                        "url": f"https://www.reddit.com/r/{subreddit_name}/comments/{post.id}/",
-                        "comments": new_comments
-                    }
-        
-        
-        json_output = json.dumps(data, indent=4)
-        with open(json_file, "w", encoding="utf-8") as file:
-            file.write(json_output)
+            post_doc = {
+                "_id": post.id,
+                "title": post.title,
+                "body": post.selftext if post.selftext else 'Empty.',
+                "author": post.author.name if post.author else "[deleted]",
+                "bot": (post.author.name == bot_id if post.author else False),
+                "url": f"https://www.reddit.com/r/{subreddit_name}/comments/{post.id}/",
+                "comments": new_comments
+            }
 
+            collection.update_one(
+                {"_id": post.id},
+                {"$set": post_doc},
+                upsert=True
+            )
+        
+        data = {doc["_id"]: doc for doc in collection.find({})}
 
         return data
 

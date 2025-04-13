@@ -152,9 +152,9 @@ def chain_of_action(model, system_prompts):
 
     # Use the reddit_poster tool
     if target_type == "Comment":
-        reddit_commenter(comment_text, thread_id, reply_id)
+        reddit_commenter(comment_text, subreddit_name, thread_id, reply_id)
     else:
-        reddit_commenter(comment_text, thread_id)
+        reddit_commenter(comment_text, subreddit_name, thread_id)
 
 
 if __name__ == "__main__":
