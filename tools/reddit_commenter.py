@@ -45,7 +45,7 @@ def reddit_commenter(comment, subreddit_name, post_id, reply_id=None):
             parent = reddit.submission(id=post_id)
 
         replied = parent.reply(comment)
-        reply_id = replied.id
+        # reply_id = replied.id
 
 
         # Function to insert the reply into the correct place in the tree

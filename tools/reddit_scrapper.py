@@ -31,7 +31,7 @@ def update_comments(existing_comments, new_comments):
             update_comments(existing_comments[comment_id]["replies"], new_comment["replies"])
 
 
-def reddit_scrapper(subreddit_name, num_posts=None):
+def reddit_scrapper(subreddit_name, num_posts=1):
     """
     Scrapes given subreddit's today's top posts for a number of posts.
 
