@@ -150,11 +150,11 @@ def chain_of_action(model, system_prompts):
     print(comment_text, thread_id)
 
 
-    # # Use the reddit_poster tool
-    # if reply_id == "":
-        # reddit_commenter(comment_text, post_id)
-    # else:
-        # reddit_commenter(comment_text, post_id, reply_id)
+    # Use the reddit_poster tool
+    if target_type == "Comment":
+        reddit_commenter(comment_text, thread_id, reply_id)
+    else:
+        reddit_commenter(comment_text, thread_id)
 
 
 if __name__ == "__main__":
