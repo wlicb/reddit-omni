@@ -42,7 +42,7 @@ def select_thread(reddit_data, system_prompt):
             for tid, thread in reddit_data.items()
         ],
     }, indent=4)
-    print(prompt)
+    # print(prompt)
 
     response = model.answer(
         system_prompt=system_prompt, prompt=prompt, json=True)
@@ -72,7 +72,7 @@ def select_reply_target(reddit_data, selected_thread_id, system_prompt):
         ],
     }, indent=4)
 
-    print(prompt)
+    # print(prompt)
 
     response = model.answer(
         system_prompt=system_prompt, prompt=prompt, json=True)
@@ -100,7 +100,7 @@ def reply_to_comment(reddit_data, selected_thread_id, selected_comment_id, syste
         ],
     }, indent=4)
 
-    print(prompt)
+    # print(prompt)
 
     response = model.answer(
         system_prompt=system_prompt, prompt=prompt, json=True)

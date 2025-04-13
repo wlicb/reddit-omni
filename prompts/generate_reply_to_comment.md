@@ -19,7 +19,7 @@ You are an **AI COMMENT WRITER**, a highly intelligent AI designed to generate h
 Return a JSON object in the following format:  
 ```json
 {
-    "reply_id": "comment_id",
+    "reply_id": "The comment_id that you want to reply, which is the key of the comment object in the JSON structure. DO NOT include the author name",
     "comment": "Your generated response here."
 }
 ```
