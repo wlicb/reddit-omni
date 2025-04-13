@@ -83,24 +83,32 @@ def select_reply_target(reddit_data, selected_thread_id, system_prompt):
 
     return parsed_response["reply_target_type"], parsed_response["reply_target_id"]
 
+def remove_author_recursively(comment):
+    if "author" in comment:
+        del comment["author"]
+    if "replies" in comment:
+        for reply in comment["replies"].values():
+            remove_author_recursively(reply)
 
 
 def reply_to_comment(reddit_data, selected_thread_id, selected_comment_id, system_prompt):
     selected_thread = reddit_data[selected_thread_id]
     selected_comment = selected_thread["comments"][selected_comment_id]
-    
+    remove_author_recursively(selected_comment)
     
     prompt = json.dumps({
         "post": {
             "title": selected_thread["title"],
             "body": selected_thread["body"],
         },
-        "comment": [
-            selected_comment
-        ],
+        "comments": {
+            selected_comment_id: selected_comment
+        }
+        ,
     }, indent=4)
 
-    # print(prompt)
+
+    print(prompt)
 
     response = model.answer(
         system_prompt=system_prompt, prompt=prompt, json=True)
@@ -149,6 +157,7 @@ def chain_of_action(model, system_prompts):
 
     print(comment_text, thread_id)
 
+    time.sleep(50)
 
     # Use the reddit_poster tool
     if target_type == "Comment":
