@@ -30,7 +30,6 @@ def update_comments(existing_comments, new_comments):
             # Recursively update the replies
             update_comments(existing_comments[comment_id]["replies"], new_comment["replies"])
 
-
 def reddit_scrapper(subreddit_name, num_posts=None):
     """
     Scrapes given subreddit's today's top posts for a number of posts.
@@ -46,7 +45,7 @@ def reddit_scrapper(subreddit_name, num_posts=None):
     (str): The formatted weather or an error message if something goes wrong.
     """
     CONFIG = dotenv_values("config/.env")
-
+    # print(CONFIG)
     # Initialize Reddit instance
     reddit = praw.Reddit(
         client_id=CONFIG["CLIENT_ID"],
@@ -55,32 +54,35 @@ def reddit_scrapper(subreddit_name, num_posts=None):
         username=CONFIG["USERNAME"],
         password=CONFIG["PASSWORD"]
     )
-
+    print(f"Reddit instance initialized: {reddit.user.me().name}")
     client = MongoClient(mongo_uri)
     db = client["reddit_db"]
     collection = db[subreddit_name]
 
-
-
     try:
         bot_id = reddit.user.me().name
-
-
-        
+        # print(f"Bot ID: {bot_id}")
 
         # Get the subreddit
         subreddit = reddit.subreddit(subreddit_name)
         top_posts = subreddit.top(limit=num_posts, time_filter="day")
-
-
-        for post in top_posts:
+        hot_posts = subreddit.hot(limit=num_posts)
+        new_posts = subreddit.new(limit=num_posts)
+        rising_posts = subreddit.rising(limit=num_posts)
+        all_posts = list(top_posts) + list(hot_posts) + list(new_posts) + list(rising_posts)
+        # print(len(all_posts), "posts")
+        # check the records in the database, remove the existing posts, which means they have been answered before
+        existing_posts = collection.find({"_id": {"$in": [post.id for post in all_posts]}})
+        existing_posts_dict = {post["_id"]: post for post in existing_posts}
+        # remove the existing posts from all_posts
+        all_posts = [post for post in all_posts if post.id not in existing_posts_dict]
+        # print(len(all_posts), "new posts")
+        for post in all_posts:
             if not post.stickied and post.id:
                 post.comments.replace_more(limit=0)
 
                 new_comments = {comment.id: get_comment_tree(comment, bot_id) for comment in post.comments}
                 
-
-
             post_doc = {
                 "_id": post.id,
                 "title": post.title,
@@ -97,8 +99,9 @@ def reddit_scrapper(subreddit_name, num_posts=None):
                 upsert=True
             )
         
-        data = {doc["_id"]: doc for doc in collection.find({})}
-
+        # data = {doc["_id"]: doc for doc in collection.find({})}
+        # return data which are new added posts
+        data = {doc["_id"]: doc for doc in collection.find({"_id": {"$in": [post.id for post in all_posts]}})}
         return data
 
     except Exception as e:
