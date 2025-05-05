@@ -75,7 +75,7 @@ def reddit_scrapper(subreddit_name, num_posts=None):
         existing_posts = collection.find({"_id": {"$in": [post.id for post in all_posts]}})
         existing_posts_dict = {post["_id"]: post for post in existing_posts}
         # remove the existing posts from all_posts
-        all_posts = [post for post in all_posts if post.id not in existing_posts_dict]
+        # all_posts = [post for post in all_posts if post.id not in existing_posts_dict]
         # print(len(all_posts), "new posts")
         for post in all_posts:
             if not post.stickied and post.id:
