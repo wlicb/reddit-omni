@@ -23,9 +23,13 @@ def random_strategy(reddit_data, thread_id, system_prompts):
 
 
 def simple_strategy(reddit_data, thread_id, system_prompts):
-    subtree, reasoning = filter_comment(reddit_data, thread_id, system_prompts["filter_comment"])
-    print(subtree, reasoning)
-    reply_id, comment_text = None, None
+    reply_id, subtree, reasoning = filter_comment(reddit_data, thread_id, system_prompts["filter_argument"], system_prompts["filter_comment"])
+    print(reply_id, subtree, reasoning)
+    if not reply_id or not subtree or not reasoning:
+        print("Fall back to random strategy.")
+        return random_strategy(reddit_data, thread_id, system_prompts)
+    else:
+        comment_text = reply_to_argument(subtree, reasoning, system_prompts["generate_reply_to_argument"])
     return reply_id, comment_text
 
 
@@ -51,14 +55,11 @@ def chain_of_action(system_prompts):
             print("Using simple strategy to comment on thread", thread_id)
             reply_id, comment_text = simple_strategy(reddit_data, thread_id, system_prompts)
             print("commented on thread", thread_id, reply_id, ":", comment_text)
+            time.sleep(60)
 
-        # Use the reddit_poster tool
-        # if target_type == "Comment":
-        # reddit_commenter(comment_text, subreddit_name, thread_id, reply_id)
-        # else:
-            # reddit_commenter(comment_text, subreddit_name, thread_id)
+        reddit_commenter(comment_text, subreddit_name, thread_id, reply_id)
 
-        # time.sleep(63*10)
+        time.sleep(63*10)
 
 if __name__ == "__main__":
 
@@ -67,5 +68,5 @@ if __name__ == "__main__":
     while True:
         chain_of_action(system_prompts)
         print("waiting for 600 seconds...")
-        # time.sleep(600)
+        time.sleep(600)
         # time.sleep(5)

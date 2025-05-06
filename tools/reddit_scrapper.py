@@ -7,7 +7,6 @@ from pymongo import MongoClient, UpdateOne
 
 mongo_uri = "mongodb://localhost:27017/"
 
-
 def get_comment_tree(comment, bot_id):
     comment_data = {
         "author": comment.author.name if comment.author else "[deleted]",
@@ -75,7 +74,7 @@ def reddit_scrapper(subreddit_name, num_posts=None):
         existing_posts = collection.find({"_id": {"$in": [post.id for post in all_posts]}})
         existing_posts_dict = {post["_id"]: post for post in existing_posts}
         # remove the existing posts from all_posts
-        # all_posts = [post for post in all_posts if post.id not in existing_posts_dict]
+        all_posts = [post for post in all_posts if post.id not in existing_posts_dict]
         # print(len(all_posts), "new posts")
         for post in all_posts:
             if not post.stickied and post.id:

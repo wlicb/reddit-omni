@@ -9,6 +9,9 @@ import json
 import time
 import os
 
+import re
+
+
 subreddit_name = 'science'
 search_term = ''
 
@@ -17,6 +20,16 @@ log_file="answered_questions.json"
 model = ChatGPT3()
 
 questions_to_answer = 5
+
+def extract_json_from_response(response_text: str):
+    try:
+        if "```" in response_text:
+            response_text = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", response_text, re.DOTALL).group(1)
+        return json.loads(response_text)
+    except Exception as e:
+        print(f"[!] Failed to extract JSON: {e}")
+        return None
+
 
 def prepare_system_prompts():
     with open("prompts/select_thread.md", "r") as f:
@@ -29,8 +42,8 @@ def prepare_system_prompts():
         system_prompt_generate_reply_to_thread = f.read()
     with open("prompts/filter_comment.md", "r") as f:
         system_prompt_filter_comment = f.read()
-    with open("prompts/select_argument.md", "r") as f:
-        system_prompt_select_argument = f.read()
+    with open("prompts/filter_argument.md", "r") as f:
+        system_prompt_filter_argument = f.read()
     with open("prompts/generate_reply_to_argument.md", "r") as f:
         system_prompt_ggenerate_reply_to_argument = f.read()
 
@@ -40,7 +53,7 @@ def prepare_system_prompts():
         "generate_reply_to_comment": system_prompt_generate_reply_to_comment,
         "generate_reply_to_thread": system_prompt_generate_reply_to_thread,
         "filter_comment": system_prompt_filter_comment,
-        "select_argument": system_prompt_select_argument,
+        "filter_argument": system_prompt_filter_argument,
         "generate_reply_to_argument": system_prompt_ggenerate_reply_to_argument
     }
 
@@ -61,7 +74,7 @@ def select_thread(reddit_data, system_prompt):
         system_prompt=system_prompt, prompt=prompt, json=True)
     # print(response)
 
-    parsed_response = json.loads(response)
+    parsed_response = extract_json_from_response(response)
 
     return parsed_response["selected_thread_id"]
 
@@ -91,7 +104,7 @@ def select_reply_target(reddit_data, selected_thread_id, system_prompt):
     
     # print(response)
 
-    parsed_response = json.loads(response)
+    parsed_response = extract_json_from_response(response)
 
     return parsed_response["reply_target_id"]
 
@@ -127,7 +140,7 @@ def reply_to_comment(reddit_data, selected_thread_id, selected_comment_id, syste
     
     # print(response)
 
-    parsed_response = json.loads(response)
+    parsed_response = extract_json_from_response(response)
 
     return parsed_response["reply_id"], parsed_response["comment"]
 
@@ -150,7 +163,8 @@ def reply_to_comment(reddit_data, selected_thread_id, selected_comment_id, syste
 
 #     return response
 
-def filter_comment(reddit_data, selected_thread_id, system_prompt):
+
+def filter_comment(reddit_data, selected_thread_id, filter_argument_system_prompt, filter_comment_system_prompt):
     def traverse_with_parents(node_dict, parent_path):
         def format_subtree(tree):
             """Convert tree to GPT-friendly format"""
@@ -196,6 +210,13 @@ def filter_comment(reddit_data, selected_thread_id, system_prompt):
             if "Moderator" in cnode.get("author", ""):
                 continue
 
+            argument_response = model.answer(filter_argument_system_prompt, prompt = cnode.get("body"))
+            parsed_argument_response = extract_json_from_response(argument_response)
+            print(cnode.get("body"))
+            print(argument_response)
+            if not parsed_argument_response.get("is_argument"):
+                continue
+
 
             # Format subtree for GPT
             gpt_input = {
@@ -205,26 +226,26 @@ def filter_comment(reddit_data, selected_thread_id, system_prompt):
             }
 
             prompt = json.dumps(gpt_input, indent=2)
-            response = model.answer(system_prompt, prompt)
+            response = model.answer(filter_comment_system_prompt, prompt)
             # print(response)
-            parsed_response = json.loads(response)
+            parsed_response = extract_json_from_response(response)
 
             if parsed_response.get("unsupported"):
                 tree_copy = deepcopy(node_dict)
                 mark_unsupported(tree_copy, cid)
                 path_ids = [pid for pid, _ in ancestry]
-                return extract_branch_path(tree_copy, path_ids), parsed_response["reason"]
+                return cid, extract_branch_path(tree_copy, path_ids), parsed_response["reason"]
 
             for child_cid, child_node in cnode.get("replies", {}).items():
                 queue.append((child_cid, child_node, ancestry + [(child_cid, child_node)]))
 
-        return None, ""
+        return None, None, ""
 
     # Process all top-level comments
     selected_thread = reddit_data.get(selected_thread_id, {})
-    print(json.dumps(selected_thread, indent=2))
+    # print(json.dumps(selected_thread, indent=2))
     top_comments = selected_thread["comments"]
-    tree, reasoning = traverse_with_parents(
+    reply_id, tree, reasoning = traverse_with_parents(
         top_comments, []
     )
     result = {
@@ -234,5 +255,22 @@ def filter_comment(reddit_data, selected_thread_id, system_prompt):
         },
         "comments": tree
     }
-    print(json.dumps(result, indent=2))
-    return result, reasoning
+    # print(json.dumps(result, indent=2))
+    return reply_id, result, reasoning
+
+
+def reply_to_argument(thread, reason, system_prompt):
+    
+    prompt = json.dumps({
+        "thread": thread,
+        "reason": reason
+    }, indent=4)
+
+    # print(prompt)
+
+    response = model.answer(
+        system_prompt=system_prompt, prompt=prompt, json=False)
+    
+    # print(response)
+
+    return response
