@@ -7,7 +7,7 @@ from pymongo import MongoClient, UpdateOne
 
 mongo_uri = "mongodb://localhost:27017/"
 
-def reddit_commenter(comment, subreddit_name, post_id, reply_id=None):
+def reddit_commenter(comment, subreddit_name, post_id, strategy, reply_id=None):
     """
     Comments on a given subreddit post or a specific comment.
 
@@ -62,6 +62,7 @@ def reddit_commenter(comment, subreddit_name, post_id, reply_id=None):
             "author": replied.author.id if replied.author else "[deleted]",
             "body": replied.body,
             "bot": (replied.author.id == bot_id),
+            "strategy": {strategy if replied.author.id == bot_id else None},
             "replies": {}
         }
 

@@ -24,7 +24,6 @@ def random_strategy(reddit_data, thread_id, system_prompts):
 
 def simple_strategy(reddit_data, thread_id, system_prompts):
     reply_id, subtree, reasoning = filter_comment(reddit_data, thread_id, system_prompts["filter_argument"], system_prompts["filter_comment"])
-    print(reply_id, subtree, reasoning)
     if not reply_id or not subtree or not reasoning:
         print("Fall back to random strategy.")
         return random_strategy(reddit_data, thread_id, system_prompts)
@@ -49,17 +48,20 @@ def chain_of_action(system_prompts):
         # split the questions
         if thread_id in random_questions:
             print("Using random strategy to comment on thread", thread_id)
-            # reply_id, comment_text = random_strategy(reddit_data, thread_id, system_prompts)
-            # print("commented on thread", thread_id, reply_id, ":", comment_text)
+            reply_id, comment_text = random_strategy(reddit_data, thread_id, system_prompts)
+            if not reply_id or not comment_text:
+                print("No reply id or comment text provided.")
+            print("commented on thread", thread_id, reply_id, ":", comment_text)
+            # reddit_commenter(comment_text, subreddit_name, thread_id, "random", reply_id)
         else:
             print("Using simple strategy to comment on thread", thread_id)
             reply_id, comment_text = simple_strategy(reddit_data, thread_id, system_prompts)
+            if not reply_id or not comment_text:
+                print("No reply id or comment text provided.")
             print("commented on thread", thread_id, reply_id, ":", comment_text)
-            time.sleep(60)
+            # reddit_commenter(comment_text, subreddit_name, thread_id, "simple", reply_id)
 
-        reddit_commenter(comment_text, subreddit_name, thread_id, reply_id)
-
-        time.sleep(63*10)
+        # time.sleep(63*10)
 
 if __name__ == "__main__":
 

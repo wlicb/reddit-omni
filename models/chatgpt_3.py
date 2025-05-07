@@ -38,10 +38,16 @@ class ChatGPT3:
 
         response_format = {"type": "json_object"} if json else None
 
-        response = self.client.chat.completions.create(
-            model=self.model_name,
-            messages=messages,
-            response_format=response_format
-        )
+        try:
+
+            response = self.client.chat.completions.create(
+                model=self.model_name,
+                messages=messages,
+                response_format=response_format
+            )
+        except Exception as e:
+            print(f"Error during answering: {e}")
+            return None
+
 
         return response.choices[0].message.content

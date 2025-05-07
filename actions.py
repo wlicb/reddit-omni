@@ -72,6 +72,9 @@ def select_thread(reddit_data, system_prompt):
 
     response = model.answer(
         system_prompt=system_prompt, prompt=prompt, json=True)
+        
+    if response == None:
+        return None
     # print(response)
 
     parsed_response = extract_json_from_response(response)
@@ -103,6 +106,8 @@ def select_reply_target(reddit_data, selected_thread_id, system_prompt):
         system_prompt=system_prompt, prompt=prompt, json=True)
     
     # print(response)
+    if response == None:
+        return None
 
     parsed_response = extract_json_from_response(response)
 
@@ -139,6 +144,8 @@ def reply_to_comment(reddit_data, selected_thread_id, selected_comment_id, syste
         system_prompt=system_prompt, prompt=prompt, json=True)
     
     # print(response)
+    if response == None:
+        return None, None
 
     parsed_response = extract_json_from_response(response)
 
@@ -211,6 +218,8 @@ def filter_comment(reddit_data, selected_thread_id, filter_argument_system_promp
                 continue
 
             argument_response = model.answer(filter_argument_system_prompt, prompt = cnode.get("body"))
+            if argument_response == None:
+                return None, None, ""
             parsed_argument_response = extract_json_from_response(argument_response)
             print(cnode.get("body"))
             print(argument_response)
@@ -227,6 +236,8 @@ def filter_comment(reddit_data, selected_thread_id, filter_argument_system_promp
 
             prompt = json.dumps(gpt_input, indent=2)
             response = model.answer(filter_comment_system_prompt, prompt)
+            if response == None:
+                return None, None, ""
             # print(response)
             parsed_response = extract_json_from_response(response)
 
@@ -270,6 +281,9 @@ def reply_to_argument(thread, reason, system_prompt):
 
     response = model.answer(
         system_prompt=system_prompt, prompt=prompt, json=False)
+    
+    if response == None:
+        return None
     
     # print(response)
 
