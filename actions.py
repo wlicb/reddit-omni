@@ -23,6 +23,7 @@ model_4 = ChatGPT4()
 
 # questions_to_answer = 5
 
+# Random Strategy
 def extract_json_from_response(response_text: str):
     try:
         if "```" in response_text:
@@ -36,6 +37,8 @@ def extract_json_from_response(response_text: str):
 def prepare_system_prompts():
     with open("prompts/select_thread.md", "r") as f:
         system_prompt_select_thread = f.read()
+    with open("prompts/select_comment.md", "r") as f:
+        system_prompt_select_comment = f.read()
     with open("prompts/select_reply_target.md", "r") as f:
         system_prompt_select_reply_target = f.read()
     with open("prompts/generate_reply_to_comment.md", "r") as f:
@@ -51,6 +54,7 @@ def prepare_system_prompts():
 
     return {
         "select_thread": system_prompt_select_thread,
+        "select_comment": system_prompt_select_comment,
         "select_reply_target": system_prompt_select_reply_target,
         "generate_reply_to_comment": system_prompt_generate_reply_to_comment,
         "generate_reply_to_thread": system_prompt_generate_reply_to_thread,
@@ -115,18 +119,34 @@ def select_reply_target(reddit_data, selected_thread_id, system_prompt):
 
     return parsed_response.get("reply_target_id", None)
 
-def remove_author_recursively(comment):
-    if "author" in comment:
-        del comment["author"]
-    if "replies" in comment:
-        for reply in comment["replies"].values():
-            remove_author_recursively(reply)
 
+def find_comment_path(tree, target_id):
+    """
+    Recursively search a nested comment tree (dict of {id: comment_dict})
+    and return a minimal subtree leading to `target_id`, including only that path.
+    Adds `"reply_target": True` to the leaf node.
+    """
+    for cid, cdata in tree.items():
+        if cid == target_id:
+            # Leaf node match — add the flag
+            new_data = dict(cdata)
+            new_data["reply_target"] = True
+            new_data["replies"] = {}
+            return {cid: new_data}
+        replies = cdata.get("replies", {})
+        if isinstance(replies, dict):
+            result = find_comment_path(replies, target_id)
+            if result:
+                # Path match — include only this reply branch
+                new_data = dict(cdata)
+                new_data["replies"] = result
+                return {cid: new_data}
+    
+    return None
 
-def reply_to_comment(reddit_data, selected_thread_id, selected_comment_id, system_prompt):
+def select_comment(reddit_data, selected_thread_id, selected_comment_id, system_prompt):
     selected_thread = reddit_data[selected_thread_id]
     selected_comment = selected_thread["comments"][selected_comment_id]
-    remove_author_recursively(selected_comment)
     
     prompt = json.dumps({
         "post": {
@@ -142,7 +162,7 @@ def reply_to_comment(reddit_data, selected_thread_id, selected_comment_id, syste
 
     # print(prompt)
 
-    response = model_4.answer(
+    response = model_3.answer(
         system_prompt=system_prompt, prompt=prompt)
     
     # print(response)
@@ -151,7 +171,37 @@ def reply_to_comment(reddit_data, selected_thread_id, selected_comment_id, syste
 
     parsed_response = extract_json_from_response(response)
 
-    return parsed_response.get("reply_id", None), parsed_response.get("comment", None)
+    reply_id = parsed_response.get("reply_id", None)
+    print(json.dumps(selected_comment, indent=2), reply_id) 
+
+    subtree = {
+         "post": {
+            "title": selected_thread["title"],
+            "body": selected_thread["body"],
+        },
+        "comments": 
+            find_comment_path({
+                selected_comment_id: selected_comment
+            }, reply_id)
+        
+    }
+
+    print(json.dumps(subtree, indent=2))
+
+    return reply_id, subtree
+
+
+
+def reply_to_comment(subtree, system_prompt):
+
+    response = model_4.answer(
+        system_prompt=system_prompt, prompt=json.dumps(subtree, indent=4))
+    
+    # print(response)
+    if response == None:
+        return None
+
+    return response
 
 # def reply_to_thread(reddit_data, selected_thread_id, system_prompt):
 #     selected_thread = reddit_data[selected_thread_id]
@@ -173,6 +223,9 @@ def reply_to_comment(reddit_data, selected_thread_id, selected_comment_id, syste
 #     return response
 
 
+
+
+# Simple Strategy
 def filter_comment(reddit_data, selected_thread_id, filter_argument_system_prompt, filter_comment_system_prompt):
     def traverse_with_parents(node_dict, parent_path):
         def format_subtree(tree):
@@ -190,6 +243,7 @@ def filter_comment(reddit_data, selected_thread_id, filter_argument_system_promp
             for cid, cdata in tree.items():
                 if cid == target_id:
                     cdata["unsupported"] = True
+                    cdata["replies"] = {}
                     return True
                 if mark_unsupported(cdata.get("replies", {}), target_id):
                     return True
@@ -223,8 +277,8 @@ def filter_comment(reddit_data, selected_thread_id, filter_argument_system_promp
             if argument_response == None:
                 return None, None, ""
             parsed_argument_response = extract_json_from_response(argument_response)
-            print(cnode.get("body"))
-            print(argument_response)
+            # print(cnode.get("body"))
+            # print(argument_response)
             if not parsed_argument_response.get("is_argument"):
                 continue
 
@@ -268,7 +322,7 @@ def filter_comment(reddit_data, selected_thread_id, filter_argument_system_promp
         },
         "comments": tree
     }
-    # print(json.dumps(result, indent=2))
+    print(json.dumps(result, indent=2))
     return reply_id, result, reasoning
 
 
