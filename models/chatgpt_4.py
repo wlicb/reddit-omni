@@ -6,20 +6,21 @@ CONFIG = dotenv_values("config/.env")
 api_key=CONFIG["OPENAI_API_KEY"]
 
 
-class ChatGPT3:
+class ChatGPT4:
     
     def __init__(self):
         """
-        Initializes the ChatGPT-3 model with the provided API key.
+        Initializes the ChatGPT-4 model with the provided API key.
         
         Parameters:
         api_key (str): The API key for OpenAI's API.
         """
         # self.client = openai.OpenAI(api_key=api_key)
         self.client = openai.OpenAI(api_key=api_key, base_url="https://api.openai-proxy.org/v1")
-        self.model_name = "gpt-3.5-turbo"
+        # self.model_name = "gpt-3.5-turbo"
+        self.model_name = "gpt-4"
 
-    def answer(self, system_prompt, prompt, json = False):
+    def answer(self, system_prompt, prompt):
         """
         Generates a response from the model based on the provided prompt.
 
@@ -36,7 +37,7 @@ class ChatGPT3:
             {"role": "user", "content": prompt}
         ]
 
-        response_format = {"type": "json_object"} if json else None
+        # response_format = {"type": "json_object"} if json else None
 
         try:
 

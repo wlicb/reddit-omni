@@ -1,6 +1,7 @@
 from collections import deque
 from copy import deepcopy
 from models.chatgpt_3 import ChatGPT3
+from models.chatgpt_4 import ChatGPT4
 from tools.reddit_scrapper import reddit_scrapper
 from tools.search_tool import search_tool
 from tools.scrape_tool import scrape_tool
@@ -17,7 +18,8 @@ search_term = ''
 
 log_file="answered_questions.json"
 
-model = ChatGPT3()
+model_3 = ChatGPT3()
+model_4 = ChatGPT4()
 
 # questions_to_answer = 5
 
@@ -70,8 +72,8 @@ def select_thread(reddit_data, system_prompt):
     }, indent=4)
     # print(prompt)
 
-    response = model.answer(
-        system_prompt=system_prompt, prompt=prompt)
+    response = model_3.answer(
+        system_prompt=system_prompt, prompt=prompt, json=True)
         
     if response == None:
         return None
@@ -102,8 +104,8 @@ def select_reply_target(reddit_data, selected_thread_id, system_prompt):
 
     # print(prompt)
 
-    response = model.answer(
-        system_prompt=system_prompt, prompt=prompt)
+    response = model_3.answer(
+        system_prompt=system_prompt, prompt=prompt, json=True)
     
     # print(response)
     if response == None:
@@ -140,8 +142,8 @@ def reply_to_comment(reddit_data, selected_thread_id, selected_comment_id, syste
 
     # print(prompt)
 
-    response = model.answer(
-        system_prompt=system_prompt, prompt=prompt)
+    response = model_4.answer(
+        system_prompt=system_prompt, prompt=prompt, json=True)
     
     # print(response)
     if response == None:
@@ -163,7 +165,7 @@ def reply_to_comment(reddit_data, selected_thread_id, selected_comment_id, syste
 
 #     # print(prompt)
 
-#     response = model.answer(
+#     response = model_4.answer(
 #         system_prompt=system_prompt, prompt=prompt)
     
 #     # print(response)
@@ -217,7 +219,7 @@ def filter_comment(reddit_data, selected_thread_id, filter_argument_system_promp
             if "Moderator" in cnode.get("author", ""):
                 continue
 
-            argument_response = model.answer(filter_argument_system_prompt, prompt = cnode.get("body"))
+            argument_response = model_3.answer(filter_argument_system_prompt, prompt = cnode.get("body"))
             if argument_response == None:
                 return None, None, ""
             parsed_argument_response = extract_json_from_response(argument_response)
@@ -235,7 +237,7 @@ def filter_comment(reddit_data, selected_thread_id, filter_argument_system_promp
             }
 
             prompt = json.dumps(gpt_input, indent=2)
-            response = model.answer(filter_comment_system_prompt, prompt)
+            response = model_3.answer(filter_comment_system_prompt, prompt)
             if response == None:
                 return None, None, ""
             # print(response)
@@ -279,7 +281,7 @@ def reply_to_argument(thread, reason, system_prompt):
 
     # print(prompt)
 
-    response = model.answer(
+    response = model_4.answer(
         system_prompt=system_prompt, prompt=prompt)
     
     if response == None:
