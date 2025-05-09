@@ -81,7 +81,7 @@ def select_thread(reddit_data, system_prompt):
 
     parsed_response = extract_json_from_response(response)
 
-    return parsed_response["selected_thread_id"]
+    return parsed_response.get("selected_thread_id", None)
 
 def select_reply_target(reddit_data, selected_thread_id, system_prompt):
     selected_thread = reddit_data[selected_thread_id]
@@ -113,7 +113,7 @@ def select_reply_target(reddit_data, selected_thread_id, system_prompt):
 
     parsed_response = extract_json_from_response(response)
 
-    return parsed_response["reply_target_id"]
+    return parsed_response.get("reply_target_id", None)
 
 def remove_author_recursively(comment):
     if "author" in comment:
@@ -143,7 +143,7 @@ def reply_to_comment(reddit_data, selected_thread_id, selected_comment_id, syste
     # print(prompt)
 
     response = model_4.answer(
-        system_prompt=system_prompt, prompt=prompt, json=True)
+        system_prompt=system_prompt, prompt=prompt)
     
     # print(response)
     if response == None:
@@ -151,7 +151,7 @@ def reply_to_comment(reddit_data, selected_thread_id, selected_comment_id, syste
 
     parsed_response = extract_json_from_response(response)
 
-    return parsed_response["reply_id"], parsed_response["comment"]
+    return parsed_response.get("reply_id", None), parsed_response.get("comment", None)
 
 # def reply_to_thread(reddit_data, selected_thread_id, system_prompt):
 #     selected_thread = reddit_data[selected_thread_id]
@@ -247,7 +247,7 @@ def filter_comment(reddit_data, selected_thread_id, filter_argument_system_promp
                 tree_copy = deepcopy(node_dict)
                 mark_unsupported(tree_copy, cid)
                 path_ids = [pid for pid, _ in ancestry]
-                return cid, extract_branch_path(tree_copy, path_ids), parsed_response["reason"]
+                return cid, extract_branch_path(tree_copy, path_ids), parsed_response.get("reason", None)
 
             for child_cid, child_node in cnode.get("replies", {}).items():
                 queue.append((child_cid, child_node, ancestry + [(child_cid, child_node)]))

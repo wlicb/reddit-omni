@@ -20,6 +20,8 @@ questions_to_answer = 5
 
 def random_strategy(reddit_data, thread_id, system_prompts):
     target_id = select_reply_target(reddit_data, thread_id, system_prompts["select_reply_target"])
+    if not target_id:
+        return None, None
     reply_id, comment_text = reply_to_comment(reddit_data, thread_id, target_id, system_prompts["generate_reply_to_comment"])
     return reply_id, comment_text
 
