@@ -20,7 +20,7 @@ class ChatGPT3:
         # self.model_name = "gpt-3.5-turbo"
         self.model_name = "gpt-4"
 
-    def answer(self, system_prompt, prompt, json=False):
+    def answer(self, system_prompt, prompt):
         """
         Generates a response from the model based on the provided prompt.
 
@@ -37,14 +37,14 @@ class ChatGPT3:
             {"role": "user", "content": prompt}
         ]
 
-        response_format = {"type": "json_object"} if json else None
+        # response_format = {"type": "json_object"} if json else None
 
         try:
 
             response = self.client.chat.completions.create(
                 model=self.model_name,
                 messages=messages,
-                response_format=response_format
+                # response_format=response_format
             )
         except Exception as e:
             print(f"Error during answering: {e}")

@@ -71,7 +71,7 @@ def select_thread(reddit_data, system_prompt):
     # print(prompt)
 
     response = model.answer(
-        system_prompt=system_prompt, prompt=prompt, json=True)
+        system_prompt=system_prompt, prompt=prompt)
         
     if response == None:
         return None
@@ -103,7 +103,7 @@ def select_reply_target(reddit_data, selected_thread_id, system_prompt):
     # print(prompt)
 
     response = model.answer(
-        system_prompt=system_prompt, prompt=prompt, json=True)
+        system_prompt=system_prompt, prompt=prompt)
     
     # print(response)
     if response == None:
@@ -141,7 +141,7 @@ def reply_to_comment(reddit_data, selected_thread_id, selected_comment_id, syste
     # print(prompt)
 
     response = model.answer(
-        system_prompt=system_prompt, prompt=prompt, json=True)
+        system_prompt=system_prompt, prompt=prompt)
     
     # print(response)
     if response == None:
@@ -164,7 +164,7 @@ def reply_to_comment(reddit_data, selected_thread_id, selected_comment_id, syste
 #     # print(prompt)
 
 #     response = model.answer(
-#         system_prompt=system_prompt, prompt=prompt, json=False)
+#         system_prompt=system_prompt, prompt=prompt)
     
 #     # print(response)
 
@@ -280,7 +280,7 @@ def reply_to_argument(thread, reason, system_prompt):
     # print(prompt)
 
     response = model.answer(
-        system_prompt=system_prompt, prompt=prompt, json=False)
+        system_prompt=system_prompt, prompt=prompt)
     
     if response == None:
         return None
