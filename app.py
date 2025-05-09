@@ -9,18 +9,19 @@ import os
 from actions import *
 import random
 
-subreddit_name = 'science'
+# subreddit_name = 'science'
+subreddit_name = 'EverythingScience'
 search_term = ''
 
 log_file="answered_questions.json"
 
+#we set the number of questions to answer to 5 for now, because usually there will not be more than 5 posts in an hour
 questions_to_answer = 5
 
 def random_strategy(reddit_data, thread_id, system_prompts):
     target_id = select_reply_target(reddit_data, thread_id, system_prompts["select_reply_target"])
     reply_id, comment_text = reply_to_comment(reddit_data, thread_id, target_id, system_prompts["generate_reply_to_comment"])
     return reply_id, comment_text
-
 
 def simple_strategy(reddit_data, thread_id, system_prompts):
     reply_id, subtree, reasoning = filter_comment(reddit_data, thread_id, system_prompts["filter_argument"], system_prompts["filter_comment"])
@@ -39,8 +40,9 @@ def chain_of_action(system_prompts):
 
     # thread_id = select_thread(reddit_data, system_prompts["select_thread"])
     thread_ids = [thread_id for thread_id in reddit_data.keys()]
-    if len(thread_ids) > 6:
-        thread_ids = thread_ids[:6]
+    #we only get the first 6 threads to answer, because the bot need 10 minutes interval to answer a question, or it will unsuccessfully post the comment
+    if len(thread_ids) > 2:
+        thread_ids = thread_ids[:2]
     print("Need to answer:", len(thread_ids), "threads")
     # time.sleep(5)
     random_questions = random.sample(thread_ids, len(thread_ids) // 2)
@@ -61,7 +63,7 @@ def chain_of_action(system_prompts):
             print("commented on thread", thread_id, reply_id, ":", comment_text)
             # reddit_commenter(comment_text, subreddit_name, thread_id, "simple", reply_id)
 
-        # time.sleep(63*10)
+        time.sleep(63*10)
 
 if __name__ == "__main__":
 
@@ -69,6 +71,6 @@ if __name__ == "__main__":
     system_prompts = prepare_system_prompts()
     while True:
         chain_of_action(system_prompts)
-        print("waiting for 600 seconds...")
-        time.sleep(600)
+        # print("waiting for 600 seconds...")
+        time.sleep(3600 * 6)
         # time.sleep(5)

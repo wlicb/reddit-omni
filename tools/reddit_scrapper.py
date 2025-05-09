@@ -50,6 +50,7 @@ def reddit_scrapper(subreddit_name, num_posts=None):
         client_id=CONFIG["CLIENT_ID"],
         client_secret=CONFIG["CLIENT_SECRET"],
         user_agent="Scrapper",
+        # requestor=requestor,
         username=CONFIG["USERNAME"],
         password=CONFIG["PASSWORD"]
     )

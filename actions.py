@@ -19,7 +19,7 @@ log_file="answered_questions.json"
 
 model = ChatGPT3()
 
-questions_to_answer = 5
+# questions_to_answer = 5
 
 def extract_json_from_response(response_text: str):
     try:
