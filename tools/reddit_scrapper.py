@@ -3,7 +3,8 @@ import praw
 import json
 import os
 from pymongo import MongoClient, UpdateOne
-
+from stem import Signal
+from stem.control import Controller
 
 mongo_uri = "mongodb://localhost:27017/"
 
@@ -77,6 +78,9 @@ def reddit_scrapper(subreddit_name, num_posts=None):
         # remove the existing posts from all_posts
         all_posts = [post for post in all_posts if post.id not in existing_posts_dict]
         # print(len(all_posts), "new posts")
+        #only get first 2 post to answer
+        if len(all_posts) > 2:
+            all_posts = all_posts[:2]
         for post in all_posts:
             if not post.stickied and post.id:
                 post.comments.replace_more(limit=0)
