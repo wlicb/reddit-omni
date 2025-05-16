@@ -96,7 +96,7 @@ def reddit_scrapper(subreddit_name, num_posts=None):
                 "url": f"https://www.reddit.com/r/{subreddit_name}/comments/{post.id}/",
                 "comments": new_comments
             }
-
+            # should be move to after the comments have been added
             collection.update_one(
                 {"_id": post.id},
                 {"$set": post_doc},

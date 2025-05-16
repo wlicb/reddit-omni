@@ -18,6 +18,7 @@ class ChatGPT3:
         # self.client = openai.OpenAI(api_key=api_key)
         self.client = openai.OpenAI(api_key=api_key, base_url="https://api.openai-proxy.org/v1")
         self.model_name = "gpt-3.5-turbo"
+        # self.model_name = "gpt-4"
 
     def answer(self, system_prompt, prompt, json = False):
         """

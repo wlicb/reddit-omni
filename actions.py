@@ -13,7 +13,7 @@ import os
 import re
 
 
-subreddit_name = 'science'
+# subreddit_name = 'science'
 search_term = ''
 
 log_file="answered_questions.json"

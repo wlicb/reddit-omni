@@ -9,8 +9,9 @@ import os
 from actions import *
 import random
 
-# subreddit_name = 'science'
-subreddit_name = 'EverythingScience'
+subreddit_name = 'science'
+# subreddit_name = 'EverythingScience'
+# subreddit_name = 'nba'
 search_term = ''
 
 log_file="answered_questions.json"
@@ -40,12 +41,12 @@ def chain_of_action(system_prompts):
     # Scrape reddit posts for questions
     # reddit_scrape = "where will the next olympics be held?"
     reddit_data = reddit_scrapper(subreddit_name, questions_to_answer)
-
+    
     # thread_id = select_thread(reddit_data, system_prompts["select_thread"])
     thread_ids = [thread_id for thread_id in reddit_data.keys()]
     #we only get the first 6 threads to answer, because the bot need 10 minutes interval to answer a question, or it will unsuccessfully post the comment
-    if len(thread_ids) > 2:
-        thread_ids = thread_ids[:2]
+    # if len(thread_ids) > 2:
+    #     thread_ids = thread_ids[:2]
     print("Need to answer:", len(thread_ids), "threads")
     # time.sleep(5)
     random_questions = random.sample(thread_ids, len(thread_ids) // 2)
@@ -54,6 +55,8 @@ def chain_of_action(system_prompts):
         if thread_id in random_questions:
             print("Using random strategy to comment on thread", thread_id)
             reply_id, comment_text = random_strategy(reddit_data, thread_id, system_prompts)
+            reddit_commenter(comment_text, subreddit_name, thread_id, "random", reply_id)
+
             if not reply_id or not comment_text:
                 print("No reply id or comment text provided.")
             print("commented on thread", thread_id, reply_id, ":", comment_text)
@@ -61,6 +64,8 @@ def chain_of_action(system_prompts):
         else:
             print("Using simple strategy to comment on thread", thread_id)
             reply_id, comment_text = simple_strategy(reddit_data, thread_id, system_prompts)
+            reddit_commenter(comment_text, subreddit_name, thread_id, "simple", reply_id)
+
             if not reply_id or not comment_text:
                 print("No reply id or comment text provided.")
             print("commented on thread", thread_id, reply_id, ":", comment_text)
@@ -73,7 +78,14 @@ if __name__ == "__main__":
 
     system_prompts = prepare_system_prompts()
     while True:
-        chain_of_action(system_prompts)
+        try:
+            chain_of_action(system_prompts)
         # print("waiting for 600 seconds...")
-        time.sleep(3600 * 6)
+            time.sleep(3600 * 6)
+        except Exception as e:
+            print("Error:", e)
+            # Log the error to a file
+            with open("error_log.txt", "a") as f:
+                f.write(f"{time.ctime()}: {e}\n")
+            # Wait for 5 seconds before retrying
         # time.sleep(5)
